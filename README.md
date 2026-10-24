@@ -44,8 +44,14 @@ OhMyGame accounts sign in with GitHub/Google in the desktop app, but the underly
      -d '{"email":"you@example.com"}'
    ```
 
-2. Follow the link in the email and set a password.
-3. Add two repository **Actions secrets**: `OHMYGAME_EMAIL` and `OHMYGAME_PASSWORD`.
+2. Open the link in the email. **It logs you straight in instead of showing a password form**, landing on `https://www.ohmygame.ai/#access_token=...&refresh_token=...`. Copy the full URL from the address bar.
+3. Set your password with the helper (verifies by signing in afterwards):
+
+   ```sh
+   python scripts/set-password.py "<pasted URL>" "<your new password>"
+   ```
+
+4. Add two repository **Actions secrets**: `OHMYGAME_EMAIL` and `OHMYGAME_PASSWORD`.
 
 Done — every workflow run signs in fresh; nothing ever expires and the desktop app is unaffected.
 
