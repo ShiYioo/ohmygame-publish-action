@@ -71,7 +71,22 @@ Tips:
   The script finds every token stored by the desktop app, tries the newest first, and prints one that actually works. If all are rejected, sign in to the desktop app once and rerun it.
 - Cover art: put a `__ohmygame/cover.webp` inside `site-dir` and it is included in the artifact, like the desktop client does.
 
-## Limitations
+## FAQ
+
+**Does the refresh token ever change? Do I have to keep updating the secret?**
+
+No ongoing maintenance, but not forever either. The desktop app rotates its token roughly hourly; the token stored in your secret keeps working for a while (often hours to days), but eventually expires. You only need to renew when the action fails with `Refresh token rejected` — one command, and it **must run on the machine where the OhMyGame desktop app is signed in**, because the newest token only exists there (in the app's local storage). GitHub Actions cannot renew it for you.
+
+Refreshing with a very stale token can trip Supabase's reuse detection and revoke the whole session — signing the desktop app out too. If that happens, sign in to the desktop app once, then renew the secret.
+
+**Can I make renewal fully automatic?**
+
+Yes — schedule that same renewal command on the desktop-app machine so the secret always holds the newest token:
+
+- Windows: Task Scheduler → daily → `python scripts\extract-token.py | gh secret set OHMYGAME_REFRESH_TOKEN -R <owner>/<repo>`
+- macOS/Linux: a daily cron entry with the same command.
+
+Requires `gh` signed in on that machine.
 
 - Runs on `ubuntu-latest` / `macos-latest` runners (needs `bash`, `curl`, and `python3`/`python`). Not for `windows` runners.
 - Interactive-story projects that need OhMyGame's Published Player are not supported; this action is for plain static web games (the `dist/` you'd otherwise zip by hand).
