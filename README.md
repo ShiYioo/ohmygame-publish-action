@@ -33,41 +33,27 @@ Publish (or update) a web game on [OhMyGame](https://ohmygame.ai) straight from 
 
 ## Setting up authentication (once, no maintenance)
 
-OhMyGame accounts sign in with GitHub/Google in the desktop app, but the underlying auth service (Supabase) also accepts **email + password**. Your account email already exists — it just has no password yet, because the account was created through GitHub/Google OAuth. You can add one:
+OhMyGame accounts are created through GitHub/Google and have no password. CI needs one, so set it up first — one interactive command does everything:
 
-1. Trigger a password-reset email for your account email (check spam). Either use a "Forgot password" UI if you find one, or call it directly:
+```sh
+python scripts/set-password.py you@example.com
+```
 
-   ```sh
-   curl -X POST https://bxrkwxorrudhyoggwcrt.supabase.co/auth/v1/recover \
-     -H "apikey: sb_publishable_Men4Oz_0ZZhyLpFDtceA7Q_oMnJE5IJ" \
-     -H "Content-Type: application/json" \
-     -d '{"email":"you@example.com"}'
-   ```
+The script then tells you what to do at each step:
 
-2. Open the link in the email. **Surprise: there is no "set a new password" form** — the link logs you straight in and lands on `https://www.ohmygame.ai/#access_token=...&refresh_token=...`. That's not a bug you can fix; OhMyGame simply doesn't have a reset-password page. Copy the **full URL** from the address bar.
-3. Set your password with the helper:
+1. It sends the reset email to your address (check spam if you don't see it).
+2. You open the email and click the link. **The link logs you straight into www.ohmygame.ai — there is no password form, this is normal** (OhMyGame doesn't have a reset page). Copy the full URL from the address bar and paste it back into the script when it asks.
+3. Type the password you want (input is hidden).
+4. The script sets it, signs in to verify, and reminds you of the values.
 
-   ```sh
-   python scripts/set-password.py "<pasted URL>" "<your new password>"
-   ```
-
-4. Add two repository **Actions secrets**: `OHMYGAME_EMAIL` and `OHMYGAME_PASSWORD`.
-
-### How set-password.py works (and why it's safe)
-
-The reset link you opened is itself proof that you control the account's email — Supabase exchanged it for a login session, and put that session's tokens in the landing URL. `set-password.py` uses exactly that session, through Supabase's standard API, in three steps:
-
-1. Takes the `refresh_token` from the URL and exchanges it for a fresh access token (`POST /auth/v1/token?grant_type=refresh_token`). This is the same call the website itself would make.
-2. Calls the standard "update current user" endpoint **while signed in as you** (`PUT /auth/v1/user` with `{"password": ...}`). Supabase allows a signed-in user to change their own password; this is the API behind any "change password" page.
-3. Verifies by signing in with the new email+password (`grant_type=password`) — the exact flow every workflow run will use.
-
-No security boundary is bypassed: the email link came to your inbox, the session belongs to you, and the password is set on your own account. Your GitHub/Google sign-in for the desktop app keeps working unchanged — a Supabase account can have OAuth identities and a password side by side.
+Finally add two repository **Actions secrets**: `OHMYGAME_EMAIL` and `OHMYGAME_PASSWORD`. That's it — every workflow run signs in fresh; nothing ever expires.
 
 Notes:
 
-- The URL's tokens expire after about an hour and single use; if step 3 fails, resend the email (step 1) and use the newest link.
-- Set HTTPS_PROXY if supabase.co is unreachable from your machine.
-- To change the password later, just rerun the whole flow with a new password.
+- If the script says the pasted URL has no `refresh_token` or verification fails, the link was stale — rerun the command and use the **newest** email.
+- Set `HTTPS_PROXY` first if supabase.co is unreachable from your machine (e.g. China).
+- Rerun the same command any time to change the password.
+- Your GitHub/Google sign-in in the desktop app keeps working; OAuth and a password coexist on the same account.
 
 Done — every workflow run signs in fresh; nothing ever expires and the desktop app is unaffected.
 
