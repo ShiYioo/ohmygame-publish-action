@@ -33,7 +33,7 @@ Publish (or update) a web game on [OhMyGame](https://ohmygame.ai) straight from 
 
 ## Setting up authentication (once, no maintenance)
 
-OhMyGame accounts sign in with GitHub/Google in the desktop app, but the underlying auth service also accepts **email + password** — and your account email already exists. Set a password once:
+OhMyGame accounts sign in with GitHub/Google in the desktop app, but the underlying auth service (Supabase) also accepts **email + password**. Your account email already exists — it just has no password yet, because the account was created through GitHub/Google OAuth. You can add one:
 
 1. Trigger a password-reset email for your account email (check spam). Either use a "Forgot password" UI if you find one, or call it directly:
 
@@ -44,14 +44,30 @@ OhMyGame accounts sign in with GitHub/Google in the desktop app, but the underly
      -d '{"email":"you@example.com"}'
    ```
 
-2. Open the link in the email. **It logs you straight in instead of showing a password form**, landing on `https://www.ohmygame.ai/#access_token=...&refresh_token=...`. Copy the full URL from the address bar.
-3. Set your password with the helper (verifies by signing in afterwards):
+2. Open the link in the email. **Surprise: there is no "set a new password" form** — the link logs you straight in and lands on `https://www.ohmygame.ai/#access_token=...&refresh_token=...`. That's not a bug you can fix; OhMyGame simply doesn't have a reset-password page. Copy the **full URL** from the address bar.
+3. Set your password with the helper:
 
    ```sh
    python scripts/set-password.py "<pasted URL>" "<your new password>"
    ```
 
 4. Add two repository **Actions secrets**: `OHMYGAME_EMAIL` and `OHMYGAME_PASSWORD`.
+
+### How set-password.py works (and why it's safe)
+
+The reset link you opened is itself proof that you control the account's email — Supabase exchanged it for a login session, and put that session's tokens in the landing URL. `set-password.py` uses exactly that session, through Supabase's standard API, in three steps:
+
+1. Takes the `refresh_token` from the URL and exchanges it for a fresh access token (`POST /auth/v1/token?grant_type=refresh_token`). This is the same call the website itself would make.
+2. Calls the standard "update current user" endpoint **while signed in as you** (`PUT /auth/v1/user` with `{"password": ...}`). Supabase allows a signed-in user to change their own password; this is the API behind any "change password" page.
+3. Verifies by signing in with the new email+password (`grant_type=password`) — the exact flow every workflow run will use.
+
+No security boundary is bypassed: the email link came to your inbox, the session belongs to you, and the password is set on your own account. Your GitHub/Google sign-in for the desktop app keeps working unchanged — a Supabase account can have OAuth identities and a password side by side.
+
+Notes:
+
+- The URL's tokens expire after about an hour and single use; if step 3 fails, resend the email (step 1) and use the newest link.
+- Set HTTPS_PROXY if supabase.co is unreachable from your machine.
+- To change the password later, just rerun the whole flow with a new password.
 
 Done — every workflow run signs in fresh; nothing ever expires and the desktop app is unaffected.
 
