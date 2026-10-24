@@ -7,7 +7,7 @@ Publish (or update) a web game on [OhMyGame](https://ohmygame.ai) straight from 
 ## Usage
 
 ```yaml
-- uses: your-name/ohmygame-publish-action@v1
+- uses: ShiYioo/ohmygame-publish-action@v1
   with:
     game-id: c17c197e-58f0-4c5a-b791-a9f320526e67
     email: ${{ secrets.OHMYGAME_EMAIL }}
