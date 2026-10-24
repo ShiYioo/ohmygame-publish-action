@@ -61,7 +61,12 @@ def main():
     if not refresh_token:
         sys.exit("That URL has no refresh_token. Make sure you copied the whole address bar URL.")
 
-    password = getpass.getpass("[3/4] Choose a new password (input hidden, min 6 chars): ")
+    print("[3/4] Choose a new password (min 6 chars).")
+    try:
+        password = getpass.getpass("(input hidden): ")
+    except Exception:
+        # getpass needs a real console; fall back to visible input.
+        password = input("(visible input, no console detected): ")
     if len(password) < 6:
         sys.exit("Password must be at least 6 characters.")
 
