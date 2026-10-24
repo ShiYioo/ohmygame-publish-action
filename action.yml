@@ -17,7 +17,7 @@ inputs:
     description: OhMyGame account password (recommended auth). Store as a secret.
     required: false
   refresh-token:
-    description: Alternative auth: Supabase refresh token extracted from the desktop app (needs occasional renewal). Use email+password instead if possible.
+    description: "Alternative auth: Supabase refresh token extracted from the desktop app (needs occasional renewal). Use email+password instead if possible."
     required: false
   site-dir:
     description: Directory containing the built static site (must contain index.html at its root).
