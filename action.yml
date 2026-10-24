@@ -1,0 +1,59 @@
+name: OhMyGame Publish
+description: Build and republish a web game to OhMyGame (https://ohmygame.ai) from GitHub Actions. Republishing updates the same play link.
+author: ShiYi
+
+branding:
+  icon: upload-cloud
+  color: purple
+
+inputs:
+  game-id:
+    description: OhMyGame game ID (from the game's play URL or /v1/me/games). Required unless first-publish is used.
+    required: false
+  refresh-token:
+    description: Supabase refresh token of your OhMyGame account. Store it as a secret.
+    required: true
+  site-dir:
+    description: Directory containing the built static site (must contain index.html at its root).
+    required: false
+    default: dist
+  title:
+    description: Game title (only used on first publish, or to update the listing).
+    required: false
+  description:
+    description: Game description (only used on first publish, or to update the listing).
+    required: false
+  api-url:
+    description: OhMyGame cloud API base URL.
+    required: false
+    default: https://cloud.ohmygame.ai
+  dry-run:
+    description: Set to "true" to authenticate and validate the artifact without uploading.
+    required: false
+    default: "false"
+
+outputs:
+  game-id:
+    description: The game ID that was published to.
+    value: ${{ steps.publish.outputs.game-id }}
+  play-url:
+    description: The (unchanging) public play URL of the game.
+    value: ${{ steps.publish.outputs.play-url }}
+  deployment-id:
+    description: The deployment ID created by this run.
+    value: ${{ steps.publish.outputs.deployment-id }}
+
+runs:
+  using: composite
+  steps:
+    - id: publish
+      shell: bash
+      run: ${{ github.action_path }}/scripts/publish.sh
+      env:
+        INPUT_GAME_ID: ${{ inputs.game-id }}
+        INPUT_REFRESH_TOKEN: ${{ inputs.refresh-token }}
+        INPUT_SITE_DIR: ${{ inputs.site-dir }}
+        INPUT_TITLE: ${{ inputs.title }}
+        INPUT_DESCRIPTION: ${{ inputs.description }}
+        INPUT_API_URL: ${{ inputs.api-url }}
+        INPUT_DRY_RUN: ${{ inputs.dry-run }}
