@@ -57,6 +57,8 @@ Notes:
 
 Done — every workflow run signs in fresh; nothing ever expires and the desktop app is unaffected.
 
+**Cover art.** The desktop app bundles the game's cover as `__ohmygame/cover.webp` inside the artifact. To keep your cover when publishing from CI, put a `__ohmygame/cover.webp` inside `site-dir` (e.g. in Vite: `public/__ohmygame/cover.webp`). Without it the listing shows no cover.
+
 ### Alternative: refresh token (not recommended)
 
 The desktop app's session token also works but rotates as the app is used, so it goes stale and needs occasional renewal. Only use it if you cannot set a password:
