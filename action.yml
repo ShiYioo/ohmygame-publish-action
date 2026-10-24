@@ -10,9 +10,15 @@ inputs:
   game-id:
     description: OhMyGame game ID (from the game's play URL or /v1/me/games). Required unless first-publish is used.
     required: false
+  email:
+    description: OhMyGame account email (recommended auth; needs a password set once - see README). Store as a secret.
+    required: false
+  password:
+    description: OhMyGame account password (recommended auth). Store as a secret.
+    required: false
   refresh-token:
-    description: Supabase refresh token of your OhMyGame account. Store it as a secret.
-    required: true
+    description: Alternative auth: Supabase refresh token extracted from the desktop app (needs occasional renewal). Use email+password instead if possible.
+    required: false
   site-dir:
     description: Directory containing the built static site (must contain index.html at its root).
     required: false
@@ -50,6 +56,8 @@ runs:
       shell: bash
       run: ${{ github.action_path }}/scripts/publish.sh
       env:
+        INPUT_EMAIL: ${{ inputs.email }}
+        INPUT_PASSWORD: ${{ inputs.password }}
         INPUT_GAME_ID: ${{ inputs.game-id }}
         INPUT_REFRESH_TOKEN: ${{ inputs.refresh-token }}
         INPUT_SITE_DIR: ${{ inputs.site-dir }}

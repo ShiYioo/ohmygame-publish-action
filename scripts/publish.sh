@@ -5,7 +5,9 @@
 set -euo pipefail
 
 GAME_ID="${INPUT_GAME_ID:-}"
-REFRESH_TOKEN="${INPUT_REFRESH_TOKEN:?refresh-token input is required}"
+EMAIL="${INPUT_EMAIL:-}"
+PASSWORD="${INPUT_PASSWORD:-}"
+REFRESH_TOKEN="${INPUT_REFRESH_TOKEN:-}"
 SITE_DIR="${INPUT_SITE_DIR:-dist}"
 TITLE="${INPUT_TITLE:-}"
 DESCRIPTION="${INPUT_DESCRIPTION:-}"
@@ -46,11 +48,23 @@ with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
 
 [ -f "$SITE_DIR/index.html" ] || die "'$SITE_DIR/index.html' not found. Build the game first (default site-dir is dist)."
 
-# --- 1. Exchange the refresh token for an access token -----------------------
-log "Authenticating..."
-AUTH=$(curl -fsS -X POST "$SUPABASE_URL/auth/v1/token?grant_type=refresh_token" \
+# --- 1. Authenticate -----------------------------------------------------------
+# Email+password creates a fresh session every run and never expires.
+# The refresh token rotates as the desktop app is used and needs occasional renewal.
+if [ -n "$EMAIL" ] && [ -n "$PASSWORD" ]; then
+  log "Authenticating with email+password..."
+  BODY=$("$PY" -c 'import json,sys; print(json.dumps({"email": sys.argv[1], "password": sys.argv[2]}))' "$EMAIL" "$PASSWORD")
+  GRANT="password"
+elif [ -n "$REFRESH_TOKEN" ]; then
+  log "Authenticating with refresh token..."
+  BODY=$("$PY" -c 'import json,sys; print(json.dumps({"refresh_token": sys.argv[1]}))' "$REFRESH_TOKEN")
+  GRANT="refresh_token"
+else
+  die "Provide email+password (recommended) or refresh-token."
+fi
+AUTH=$(curl -fsS -X POST "$SUPABASE_URL/auth/v1/token?grant_type=$GRANT" \
   -H "apikey: $SUPABASE_KEY" -H "Content-Type: application/json" \
-  -d "{\"refresh_token\":\"$REFRESH_TOKEN\"}") || die "Could not reach the auth service"
+  -d "$BODY") || die "Could not authenticate (check credentials / network)"
 ACCESS_TOKEN=$(jsonget "$AUTH" '.get("access_token","")')
 [ -n "$ACCESS_TOKEN" ] || die "Refresh token rejected. Re-extract it from the OhMyGame desktop app (see README)."
 log "Authenticated."
