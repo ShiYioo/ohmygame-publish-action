@@ -54,7 +54,7 @@ runs:
   steps:
     - id: publish
       shell: bash
-      run: ${{ github.action_path }}/scripts/publish.sh
+      run: bash "${{ github.action_path }}/scripts/publish.sh"
       env:
         INPUT_EMAIL: ${{ inputs.email }}
         INPUT_PASSWORD: ${{ inputs.password }}
