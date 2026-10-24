@@ -75,9 +75,9 @@ Tips:
 
 **Does the refresh token ever change? Do I have to keep updating the secret?**
 
-No ongoing maintenance, but not forever either. The desktop app rotates its token roughly hourly; the token stored in your secret keeps working for a while (often hours to days), but eventually expires. You only need to renew when the action fails with `Refresh token rejected` — one command, and it **must run on the machine where the OhMyGame desktop app is signed in**, because the newest token only exists there (in the app's local storage). GitHub Actions cannot renew it for you.
+No ongoing maintenance, but not forever either. The desktop app rotates its token roughly hourly; only the newest token works, and previously used ones are rejected with "Refresh token rejected" (this does not sign the desktop app out). Renew the secret with one command, which **must run on the machine where the OhMyGame desktop app is signed in**, because the newest token only exists there (in the app's local storage). GitHub Actions cannot renew it for you.
 
-Refreshing with a very stale token can trip Supabase's reuse detection and revoke the whole session — signing the desktop app out too. If that happens, sign in to the desktop app once, then renew the secret.
+If the script finds no working token while the desktop app is running, the newest session may only be in memory — fully quit and reopen the app (no re-login needed) and run it again.
 
 **Can I make renewal fully automatic?**
 
